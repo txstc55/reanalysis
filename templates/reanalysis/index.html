@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html>
+<head>
+  <link rel="stylesheet" href="{% static "css/mystyle.css" %}"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/jquery-ui.min.js"></script>
+<style>
+
+
+
+</style>
+<script>
+$(function(){
+  var representing = {{representing|safe}};
+  var canvas_length = {{before_words|length}}+1;
+  var canvas = document.getElementById("canvas");
+  canvas.setAttribute("width", 86*canvas_length+"px");
+  console.log(representing);
+  var drawConnector = function(from, to, arrowId) {
+    var divA       = document.getElementById(from);
+    var divB       = document.getElementById(to);
+    var arrow  = document.querySelector(arrowId);
+    var rectA=$("#"+from).position()
+    var heightA=$("#"+from).height()
+    var widthA=$("#"+from).width()
+
+    var rectB=$("#"+to).position()
+    var heightB=$("#"+to).height()
+    var widthB=$("#"+to).width()
+    var posnALeft = {
+      x: divA.offsetLeft - 8,
+      y: divA.offsetTop  + divA.offsetHeight / 2
+    };
+    var posnARight = {
+      x: divA.offsetLeft + divA.offsetWidth + 8,
+      y: divA.offsetTop  + divA.offsetHeight / 2    
+    };
+    var posnBLeft = {
+      x: divB.offsetLeft - 8,
+      y: divB.offsetTop  + divA.offsetHeight / 2
+    };
+    var posnBRight = {
+      x: divB.offsetLeft + divB.offsetWidth + 8,
+      y: divB.offsetTop  + divA.offsetHeight / 2
+    };
+    var height_multiplier = Math.abs(parseInt(from)-parseInt(to));
+    if (parseInt(from)>(parseInt(to))){
+      var dStrRight =
+        "M" +
+        (rectA.left+widthA/2+5+to*2) + "," + (rectA.top-20) + " " +
+        "C" +
+        (rectA.left+widthA/2-10+to*2) + "," + (rectA.top-25-19*height_multiplier) + " " +
+        (rectB.left+widthB/2+20+from*2) + "," + (rectB.top-25-19*height_multiplier) + " " +
+        (rectB.left+widthB/2+5+from*2) + "," + (rectB.top-20);
+      arrow.setAttribute("d", dStrRight);
+      arrow.style.stroke='red'
+    }
+    else{
+      var dStrLeft =
+        "M" +
+        (rectA.left+widthA/2+5+to*2) + "," + (rectA.top-20) + " " +
+        "C" +
+        (rectA.left+widthA/2+15+to*2) + "," + (rectA.top-25-23*height_multiplier) + " " +
+        (rectB.left+widthB/2-5+from*2) + "," + (rectB.top-25-23*height_multiplier) + " " +
+        (rectB.left+widthB/2+5+from*2) + "," + (rectB.top-20);
+      arrow.setAttribute("d", dStrLeft);
+      arrow.style.stroke='blue'
+
+    }
+
+  };
+  for (i=0; i<representing.length; i++){
+    var arrow = representing[i]
+    drawConnector(arrow[0], arrow[1], arrow[2])
+  }
+
+
+}); // end $(function(){});
+</script>
+</head>
+<body>
+
+  <form action="" method="POST">
+    {% csrf_token %}
+    <div class="page_scroll">
+    {% if if_continue%}
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg" width="200%" height="50vh">
+
+      <defs>
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="5" refY="8" markerWidth="10" markerHeight="15" orient="280deg">
+          <path d="M 100 0 L 10 5 L 0 10 z" />
+        </marker>
+      </defs>
+      <g fill="none" stroke="black" stroke-width="1" marker-end="url(#arrowhead)">
+        {% for arrow in arrow_list %}
+        <path id="{{arrow}}"/>
+        {% endfor %}
+      </g>
+    </svg>
+
+      {% if before_words %}
+
+        
+          <ul> 
+              {% for word in before_words %}
+            <li>
+              <table class="table">
+                <tr><div class="word_box" id='{{forloop.counter}}'>{{ word }}</div><br></tr>
+                <tr><input type="checkbox" name="head" value={{ forloop.counter }}> Head<br></tr>
+                <tr><input type="checkbox" name="dependent" value={{ forloop.counter }}> Dependent<br></tr>              
+              </table>
+            </li>
+              {% endfor %}
+            <li>
+              <table class="table">
+                <tr><div class="word_box" >{{current_word}}</div><br></tr>
+                <tr><br></tr>
+                <tr><br></tr>              
+              </table>
+            </li>
+          </ul>
+
+
+        <input type="hidden" name="count" value={{before_words|length}}>
+        <input type="hidden" name="sentence_index" value={{ sentence_index }}>
+        {% for item in dep_list %}
+          <input type="hidden" name="dep_list" value={{ item }}>
+        {% endfor %}
+        <input type="hidden" name="reanalysis_index" value={{ reanalysis_index }}>
+        <br>
+        <input type="submit" class="btn btn-default" type="button" name = "next" value="Next Word">
+        <br>
+        <select name ="re_list">
+          {% for word in select_list %}
+          <option value={{ forloop.counter }}>{{ word }}</option>
+          {% endfor %}
+        </select>
+        <input type="submit" class="btn btn-default" type="button" name = "reanalysis" value="Reanalysis">
+        <br>
+        <input type="submit" class="btn btn-default" type="button" name = "skip" value="Skip Sentence">
+
+    
+
+
+      {% else %}
+        <p>No Access Records. Table Not Created.</p>
+      {% endif %}
+    {% else %}
+      <h2>Here is the test string: </h2>
+      <p>{{ test_string }}</p>
+      <input type="submit" class="btn btn-default" type="button" name = "skip" value="Next Sentence">
+    {% endif %}
+     <div>
+
+  </form>
+
+</body>
+</html>
